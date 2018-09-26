@@ -657,7 +657,7 @@ void on_hidl_server_died() {
 }
 uint8_t btif_a2dp_audio_process_request(uint8_t cmd)
 {
-  APPL_TRACE_DEBUG(LOG_TAG,"btif_a2dp_audio_process_request %s", audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
+  APPL_TRACE_WARNING(LOG_TAG,"btif_a2dp_audio_process_request %s", audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
   uint8_t status = A2DP_CTRL_ACK_FAILURE;
   if (property_get("persist.bt.a2dp.hal.implementation", a2dp_hal_imp, "false") &&
           !strcmp(a2dp_hal_imp, "true")) {
@@ -887,9 +887,12 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd)
         }
         if (btif_a2dp_source_is_remote_start()) {
           int remote_start_idx = btif_get_is_remote_started_idx();
-          APPL_TRACE_DEBUG("%s: remote started idx = %d",__func__, remote_start_idx);
+          int latest_playing_idx = btif_av_get_latest_device_idx_to_start();
+          APPL_TRACE_DEBUG("%s: remote started idx = %d latest playing = %d",__func__,
+                           remote_start_idx, latest_playing_idx);
           if ((remote_start_idx < btif_max_av_clients) &&
-                  btif_av_is_playing_on_other_idx(remote_start_idx)) {
+            ((latest_playing_idx < btif_max_av_clients && latest_playing_idx != remote_start_idx) ||
+             btif_av_is_playing_on_other_idx(remote_start_idx))) {
             APPL_TRACE_WARNING("%s: Already playing on other index, don't cancel remote start timer",__func__);
             status = A2DP_CTRL_ACK_PENDING;
           } else {
@@ -905,6 +908,7 @@ uint8_t btif_a2dp_audio_process_request(uint8_t cmd)
             APPL_TRACE_DEBUG("Audio start awaited handle start under handoff");
             audio_start_awaited = false;
             btif_dispatch_sm_event(BTIF_AV_START_STREAM_REQ_EVT, NULL, 0);
+            status = A2DP_CTRL_ACK_PENDING;
             int idx = btif_av_get_latest_device_idx_to_start();
             if (btif_av_get_peer_sep(idx) == AVDT_TSEP_SRC)
               status = A2DP_CTRL_ACK_SUCCESS;
@@ -1170,9 +1174,12 @@ uint8_t btif_a2dp_audio_snd_ctrl_cmd(uint8_t cmd)
       }
       if (btif_a2dp_source_is_remote_start()) {
         int remote_start_idx = btif_get_is_remote_started_idx();
-        APPL_TRACE_DEBUG("%s: remote started idx = %d",__func__, remote_start_idx);
+        int latest_playing_idx = btif_av_get_latest_device_idx_to_start();
+        APPL_TRACE_DEBUG("%s: remote started idx = %d, latest playing  idx = %d",__func__,
+                         remote_start_idx, latest_playing_idx);
         if ((remote_start_idx < btif_max_av_clients) &&
-            btif_av_is_playing_on_other_idx(remote_start_idx)) {
+         ((latest_playing_idx < btif_max_av_clients && latest_playing_idx != remote_start_idx) ||
+         (btif_av_is_playing_on_other_idx(remote_start_idx)))) {
           APPL_TRACE_WARNING("%s: Already playing on other index, don't cancel remote start timer",__func__);
           status = A2DP_CTRL_ACK_PENDING;
         } else {
@@ -1188,6 +1195,7 @@ uint8_t btif_a2dp_audio_snd_ctrl_cmd(uint8_t cmd)
           APPL_TRACE_DEBUG("Audio start awaited handle start under handoff");
           audio_start_awaited = false;
           btif_dispatch_sm_event(BTIF_AV_START_STREAM_REQ_EVT, NULL, 0);
+          status = A2DP_CTRL_ACK_PENDING;
           int idx = btif_av_get_latest_device_idx_to_start();
           if (btif_av_get_peer_sep(idx) == AVDT_TSEP_SRC)
             status = A2DP_CTRL_ACK_SUCCESS;
@@ -1310,6 +1318,11 @@ uint8_t btif_a2dp_audio_snd_ctrl_cmd(uint8_t cmd)
   APPL_TRACE_DEBUG("a2dp_snd_ctrl_cmd : %s DONE",
                    audio_a2dp_hw_dump_ctrl_event((tA2DP_CTRL_CMD)cmd));
   return status;
+}
+
+void btif_a2dp_audio_reset_pending_cmds() {
+  a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
+  a2dp_cmd_queued = A2DP_CTRL_CMD_NONE;
 }
 
 /*

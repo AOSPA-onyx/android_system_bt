@@ -495,7 +495,7 @@ static void btif_av_collission_timer_timeout(UNUSED_ATTR void *data) {
   btif_sm_state_t av_state;
   RawAddress av_address;
 
-  if(!btif_storage_is_device_bonded(target_bda)){
+  if(btif_storage_is_device_bonded(target_bda) != BT_STATUS_SUCCESS){
     BTIF_TRACE_IMP("btif_av_collission_timer_timeout: not bonded device ");
     return;
   }else{
@@ -1798,6 +1798,13 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
       } else {
         btif_av_cb[index].flags |= BTIF_AV_FLAG_LOCAL_SUSPEND_PENDING;
       }
+      if (btif_av_cb[index].remote_started) {
+        if (btif_a2dp_source_is_remote_start()) {
+          BTIF_TRACE_DEBUG("%s:cancel remote start timer",__func__);
+          btif_a2dp_source_cancel_remote_start();
+        }
+        btif_av_cb[index].remote_started = false;
+      }
       /* if we were remotely suspended but suspend locally, local suspend
        * always overrides
        */
@@ -1927,7 +1934,7 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
            * Remote sent avdtp start followed by avdtp suspend, setting
            * the flag not to update the play state to app
            */
-          remote_start_cancelled = true;
+           //remote_start_cancelled = true;
         }
         btif_av_cb[index].remote_started = false;
       }
@@ -1991,6 +1998,7 @@ static bool btif_av_state_started_handler(btif_sm_event_t event, void* p_data,
           BTIF_TRACE_IMP("%s Don't update audio state as remote started and suspended", __func__);
           if (btif_av_cb[index].flags & BTIF_AV_FLAG_REMOTE_SUSPEND)
             btif_av_cb[index].flags &= ~BTIF_AV_FLAG_REMOTE_SUSPEND;
+          btif_report_audio_state(BTAV_AUDIO_STATE_STOPPED, &(btif_av_cb[index].peer_bda));
       }
       else
       {
@@ -2304,7 +2312,7 @@ static void btif_av_handle_event(uint16_t event, char* p_param) {
       }
       BTIF_TRACE_IMP("%s: Remote Started set @ index = %d", __func__, index);
       btif_av_cb[index].remote_started = false;
-      btif_av_cb[index].is_suspend_for_remote_start = true;
+      //btif_av_cb[index].is_suspend_for_remote_start = true;
 #ifdef BTA_AV_SPLIT_A2DP_ENABLED
       if ((bt_split_a2dp_enabled) && (!btif_av_is_playing_on_other_idx(index))) {
         BTIF_TRACE_IMP("%s: Other index is not playing", __func__);
@@ -3146,7 +3154,7 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
   connect_req.uuid = uuid;
   BTIF_TRACE_EVENT("%s", __func__);
 
-  if (!btif_storage_is_device_bonded(bd_addr))
+  if (btif_storage_is_device_bonded(bd_addr) != BT_STATUS_SUCCESS)
   {
     BTIF_TRACE_WARNING("%s()## connect_int ## Device Not Bonded %s \n", __func__,
                       bd_addr->ToString().c_str());
@@ -3448,6 +3456,10 @@ static const btav_sink_interface_t bt_av_sink_interface = {
     update_audio_focus_state,
     update_audio_track_gain,
 };
+
+RawAddress btif_av_get_addr_by_index(int idx) {
+  return (idx < btif_max_av_clients) ? btif_av_cb[idx].peer_bda:RawAddress::kEmpty;
+}
 
 /*******************************************************************************
  *

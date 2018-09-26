@@ -49,21 +49,10 @@ static unsigned char BASE_UUID[16] = {0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00,
                                       0x00, 0x00, 0x00, 0x00};
 
 int uuidType(const unsigned char* p_uuid) {
-  int i = 0;
-  int match = 0;
-  int all_zero = 1;
+  if (memcmp(p_uuid, BASE_UUID, 12) != 0) return LEN_UUID_128;
+  if (memcmp(p_uuid + 14, BASE_UUID + 14, 2) != 0) return LEN_UUID_32;
 
-  for (i = 0; i != 16; ++i) {
-    if (i == 12 || i == 13) continue;
-
-    if (p_uuid[i] == BASE_UUID[i]) ++match;
-
-    if (p_uuid[i] != 0) all_zero = 0;
-  }
-  if (all_zero) return 0;
-  if (match == 12) return LEN_UUID_32;
-  if (match == 14) return LEN_UUID_16;
-  return LEN_UUID_128;
+  return LEN_UUID_16;
 }
 
 /*******************************************************************************

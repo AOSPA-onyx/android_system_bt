@@ -652,6 +652,7 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
   uint16_t attr_len;
   bool is_avrcp_fallback = FALSE;
   bool is_avrcp_browse_bit_reset = FALSE;
+  bool is_avrcp_cover_bit_reset = FALSE;
   uint16_t dut_profile_version;
 
   if (p_req + sizeof(rec_handle) + sizeof(max_list_len) > p_req_end) {
@@ -774,6 +775,8 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
         // check for browse bit will happen always, because minimum DUT version is 1.4 now.
         is_avrcp_browse_bit_reset = sdp_reset_avrcp_browsing_bit(
                 p_rec->attribute[1], p_attr, p_ccb->device_address);
+        is_avrcp_cover_bit_reset = sdp_reset_avrcp_cover_art_bit(
+                p_rec->attribute[1], p_attr, p_ccb->device_address);
     }
 
       is_hfp_fallback = sdp_change_hfp_version (p_attr, p_ccb->device_address);
@@ -856,6 +859,21 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
           }
           is_avrcp_browse_bit_reset = FALSE;
       }
+      if (is_avrcp_cover_bit_reset) {
+          /* Restore Cover Art bit */
+          SDP_TRACE_ERROR("Restore Cover Art bit");
+          switch(dut_profile_version) {
+              case AVRC_REV_1_6:
+               SDP_TRACE_ERROR(" %s, DUT version 1.6, cover_art_bit should not be true", __func__);
+              break;
+              case AVRC_REV_1_5:
+              case AVRC_REV_1_4:
+                  p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION-1]
+                                              |= AVRCP_CA_SUPPORT_BITMASK;
+              break;
+          }
+          is_avrcp_cover_bit_reset = FALSE;
+      }
       if (is_hfp_fallback) {
           SDP_TRACE_ERROR("Restore HFP version to 1.6");
           /* Update HFP version back to 1.6 */
@@ -894,6 +912,21 @@ static void process_service_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
           break;
       }
       is_avrcp_browse_bit_reset = FALSE;
+  }
+  if (is_avrcp_cover_bit_reset) {
+      /* Restore Cover Art bit */
+      SDP_TRACE_ERROR("Restore Cover Art bit");
+      switch(dut_profile_version) {
+          case AVRC_REV_1_6:
+           SDP_TRACE_ERROR(" %s, DUT version 1.6, cover_art_bit should not be true", __func__);
+          break;
+          case AVRC_REV_1_5:
+          case AVRC_REV_1_4:
+              p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION-1]
+                                          |= AVRCP_CA_SUPPORT_BITMASK;
+          break;
+      }
+      is_avrcp_cover_bit_reset = FALSE;
   }
   if (is_hfp_fallback) {
       SDP_TRACE_ERROR("Restore HFP version to 1.6");
@@ -1000,6 +1033,7 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
   uint16_t seq_len, attr_len;
   bool is_avrcp_fallback = FALSE;
   bool is_avrcp_browse_bit_reset = FALSE;
+  bool is_avrcp_cover_bit_reset = FALSE;
   uint16_t dut_profile_version;
 
   /* Extract the UUID sequence to search for */
@@ -1130,6 +1164,8 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
             // check for browse bit will happen always, because minimum DUT version is 1.4 now.
             is_avrcp_browse_bit_reset = sdp_reset_avrcp_browsing_bit(
                     p_rec->attribute[1], p_attr, p_ccb->device_address);
+            is_avrcp_cover_bit_reset = sdp_reset_avrcp_cover_art_bit(
+                    p_rec->attribute[1], p_attr, p_ccb->device_address);
         }
 
         is_hfp_fallback = sdp_change_hfp_version (p_attr, p_ccb->device_address);
@@ -1216,6 +1252,21 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
             }
             is_avrcp_browse_bit_reset = FALSE;
         }
+        if (is_avrcp_cover_bit_reset) {
+            /* Restore Cover Art bit */
+            SDP_TRACE_ERROR("Restore Cover Art bit");
+            switch(dut_profile_version) {
+                case AVRC_REV_1_6:
+                 SDP_TRACE_ERROR(" %s, DUT version 1.6, cover_art_bit should not be true", __func__);
+                break;
+                case AVRC_REV_1_5:
+                case AVRC_REV_1_4:
+                    p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION-1]
+                                                |= AVRCP_CA_SUPPORT_BITMASK;
+                break;
+            }
+            is_avrcp_cover_bit_reset = FALSE;
+        }
         if (is_hfp_fallback) {
             SDP_TRACE_ERROR("Restore HFP version to 1.6");
             /* Update HFP version back to 1.6 */
@@ -1254,6 +1305,21 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
             break;
         }
         is_avrcp_browse_bit_reset = FALSE;
+    }
+    if (is_avrcp_cover_bit_reset) {
+        /* Restore Cover Art bit */
+        SDP_TRACE_ERROR("Restore Cover Art bit");
+        switch(dut_profile_version) {
+            case AVRC_REV_1_6:
+             SDP_TRACE_ERROR(" %s, DUT version 1.6, cover_art_bit should not be true", __func__);
+            break;
+            case AVRC_REV_1_5:
+            case AVRC_REV_1_4:
+                p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION-1]
+                                            |= AVRCP_CA_SUPPORT_BITMASK;
+            break;
+        }
+        is_avrcp_cover_bit_reset = FALSE;
     }
     if (is_hfp_fallback) {
         SDP_TRACE_ERROR("Restore HFP version to 1.6");

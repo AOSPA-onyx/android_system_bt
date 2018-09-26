@@ -349,6 +349,11 @@ void bta_gattc_get_disc_range(tBTA_GATTC_SERV* p_srvc_cb, uint16_t* p_s_hdl,
                               uint16_t* p_e_hdl, bool is_srvc) {
   tBTA_GATTC_ATTR_REC* p_rec = NULL;
 
+  if ((p_srvc_cb == NULL) || (p_srvc_cb->p_srvc_list == NULL)
+      || (p_srvc_cb->cur_srvc_idx >= p_srvc_cb->total_srvc)) {
+    APPL_TRACE_ERROR("bta_gattc_get_disc_range::No service available, unexpected discovery");
+    return;
+  }
   if (is_srvc) {
     p_rec = p_srvc_cb->p_srvc_list + p_srvc_cb->cur_srvc_idx;
     *p_s_hdl = p_rec->s_handle;

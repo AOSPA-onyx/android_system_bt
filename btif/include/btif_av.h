@@ -429,5 +429,5 @@ void btif_av_peer_config_dump();
 ** Returns
 ********************************************************************************/
 int btif_av_get_current_playing_dev_idx();
-
+RawAddress btif_av_get_addr_by_index(int idx);
 #endif /* BTIF_AV_H */
