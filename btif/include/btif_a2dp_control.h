@@ -35,6 +35,4 @@ void btif_a2dp_control_cleanup(void);
 void btif_a2dp_command_ack(tA2DP_CTRL_ACK status);
 
 tA2DP_CTRL_CMD  btif_a2dp_get_pending_command();
-
-void btif_a2dp_pending_cmds_reset(void);
 #endif /* BTIF_A2DP_CONTROL_H */

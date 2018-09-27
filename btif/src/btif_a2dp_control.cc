@@ -883,8 +883,3 @@ void btif_a2dp_command_ack(tA2DP_CTRL_ACK status) {
 tA2DP_CTRL_CMD btif_a2dp_get_pending_command() {
   return a2dp_cmd_pending;
 }
-
-void btif_a2dp_pending_cmds_reset() {
-  a2dp_cmd_pending = A2DP_CTRL_CMD_NONE;
-  a2dp_cmd_queued = A2DP_CTRL_CMD_NONE;
-}
